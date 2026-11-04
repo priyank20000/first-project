@@ -21,7 +21,9 @@ app.use(express.json());
 
 app.use('/api/health', healthRouter);
 app.use('/api/checkins', checkinsRouter);
-
+app.get("/", (req, res) => {
+  res.send("hello")
+})
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });

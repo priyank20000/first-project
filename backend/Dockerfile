@@ -1,12 +1,32 @@
-FROM node:20-alpine
+# ==========================================
+# 1. DEVELOPMENT STAGE
+# ==========================================
+
+FROM node:20-alpine as dev
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --omit=dev
+COPY backend/package.json ./
+RUN npm install
 
-COPY src ./src
+COPY backend/ .
 
-EXPOSE 5000
+ENV CHOKIDAR_USEPOLLING=true
+ENV WATCHPACK_POLLING=true
 
-CMD ["npm", "start"]
+CMD ["npm","run", "dev"]
+
+# ==========================================
+# 3. PRODUCTION STAGE 
+# ==========================================
+
+FROM node:20-alpine as prod
+
+WORKDIR /app
+
+COPY backend/package.json ./
+RUN npm install
+
+COPY backend/ .
+
+CMD ["npm","start"]

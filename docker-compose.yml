@@ -1,41 +1,70 @@
 services:
   mongodb:
-    image: mongo:7
-    container_name: teampulse-mongodb
+    image: mongo:latest
     restart: unless-stopped
+    ports:
+      - "27018:27017"
     volumes:
       - mongodb_data:/data/db
-    networks:
-      - teampulse
 
-  backend:
-    build: ./backend
-    container_name: teampulse-backend
-    restart: unless-stopped
+  backend-dev:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: dev
+    ports:
+      - "4300:4300"
+    volumes:
+      - ./backend:/app
     environment:
-      PORT: 5000
-      MONGODB_URI: mongodb://mongodb:27017/teampulse
+      - PORT=4300
+      - MONGODB_URI=mongodb://mongodb:27017/teampulse-dev
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     depends_on:
       - mongodb
+
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    environment:
+      - VITE_API_URL=http://localhost:4300
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - FAST_REFRESH=true
+    depends_on:
+      - backend-dev
+
+  backend-prod:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: prod
     ports:
       - "5000:5000"
-    networks:
-      - teampulse
-
-  frontend:
-    build: ./frontend
-    container_name: teampulse-frontend
-    restart: unless-stopped
-    ports:
-      - "8080:80"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongodb:27017/teampulse-prod
     depends_on:
-      - backend
-    networks:
-      - teampulse
+      - mongodb
+
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: prod
+    ports:
+      - "8000:80"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+    depends_on:
+      - backend-prod
 
 volumes:
   mongodb_data:
-
-networks:
-  teampulse:
-    driver: bridge
